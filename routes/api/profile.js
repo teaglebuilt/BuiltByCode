@@ -7,11 +7,36 @@ const passport = require("passport");
 const Profile = require("../../models/Profile");
 const User = require("../../models/User");
 
+// Load Validation
+const validateProfileInput = require("../../validation/profile");
+
 // @route   GET api/profile/test
 // @desc   Test profile route
 // @access Public
 router.get("/test", (request, response) =>
   response.json({ msg: "Profile works" })
+);
+
+// @route   GET api/profile
+// @desc    Get current users profile
+// @access  Private
+router.get(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    const errors = {};
+
+    Profile.findOne({ user: req.user.id })
+      .populate("user", ["name", "avatar"])
+      .then(profile => {
+        if (!profile) {
+          errors.noprofile = "There is no profile for this user";
+          return res.status(404).json(errors);
+        }
+        res.json(profile);
+      })
+      .catch(err => res.status(404).json(err));
+  }
 );
 
 // @route   Post api/profile
@@ -21,6 +46,12 @@ router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
   (request, response) => {
+    const { errors, isValid } = validateProfileInput(request.body);
+    // Check validation
+    if (!isValid) {
+      // Return any errors with 400 status
+      return response.status(400).json(errors);
+    }
     // Get fields
     const profileFields = {};
     profileFields.user = request.user.id; // logged in user
@@ -80,6 +111,4 @@ router.post(
   }
 );
 
-//myspace.com/161404039/mixes/classic-my-photos-539405/photo/266723844
-
-https: module.exports = router;
+module.exports = router;
