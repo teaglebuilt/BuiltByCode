@@ -14,3 +14,5 @@ Social blog platform for developers. Built with the MERN stack.
     passport: 0.4.0,
     passport-jwt: 4.0.0,
     validator: 10.8.0
+
+![alt text](http://adsvento.in/images/react/mernstack.png "MERN")
