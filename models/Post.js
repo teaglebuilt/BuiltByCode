@@ -1,4 +1,4 @@
-const mongoose = require("mogoose");
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 // Create Schema
@@ -36,8 +36,7 @@ const PostSchema = new Schema({
         required: true
       },
       name: {
-        type: String,
-        required: true
+        type: String
       },
       avatar: {
         type: String
@@ -54,4 +53,4 @@ const PostSchema = new Schema({
   }
 });
 
-module.exports = mongoose.models("post", PostSchema);
+module.exports = Post = mongoose.model("post", PostSchema);
