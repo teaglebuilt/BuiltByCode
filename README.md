@@ -1,6 +1,10 @@
 # BuiltByCode
 
-Social blog platform for developers. Built with the MERN stack.
+A community for developers. I built this app straight out of Nashville Software School. The purpose is mind is to create a community that allows us to continue to learn and grow by sharing.
+
+Each user has the benefits of contributing to the blog or creating their own post or lessons / tutorials. Every user can create a custom profile. This application can be used for hiring, training, self taught coders, and graduates like myself.
+
+Built with the MERN stack.
 (Mongoose, Express, React/Redux, Node.JS)
 
 # Dependencies

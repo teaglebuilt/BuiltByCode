@@ -51,4 +51,4 @@ const mapStateToProps = state => {
   };
 };
 
-export default connect()(Landing);
+export default connect(mapStateToProps)(Landing);
