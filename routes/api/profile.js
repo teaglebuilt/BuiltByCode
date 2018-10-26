@@ -3,21 +3,20 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const passport = require("passport");
 
-// Load models
-const Profile = require("../../models/Profile");
-const User = require("../../models/User");
-
 // Load Validation
 const validateProfileInput = require("../../validation/profile");
 const validateExperienceInput = require("../../validation/experience");
 const validateEducationInput = require("../../validation/education");
 
+// Load Profile Model
+const Profile = require("../../models/Profile");
+// Load User Model
+const User = require("../../models/User");
+
 // @route   GET api/profile/test
-// @desc   Test profile route
-// @access Public
-router.get("/test", (request, response) =>
-  response.json({ msg: "Profile works" })
-);
+// @desc    Tests profile route
+// @access  Public
+router.get("/test", (req, res) => res.json({ msg: "Profile Works" }));
 
 // @route   GET api/profile
 // @desc    Get current users profile
@@ -42,117 +41,113 @@ router.get(
 );
 
 // @route   GET api/profile/all
-// @desc    GET all profiles
+// @desc    Get all profiles
 // @access  Public
-router.get("/all", (request, response) => {
+router.get("/all", (req, res) => {
   const errors = {};
 
   Profile.find()
-    .populate("user", ["user", "avatar"])
-    .then(profile => {
-      if (!profile) {
-        errors.noprofile = "There are no profiles.";
-        return response.status(404).json(errors);
+    .populate("user", ["name", "avatar"])
+    .then(profiles => {
+      if (!profiles) {
+        errors.noprofile = "There are no profiles";
+        return res.status(404).json(errors);
       }
-      response.json(profile);
+
+      res.json(profiles);
     })
-    .catch(err =>
-      response.status(404).json({ profile: "There are no profiles." })
-    );
+    .catch(err => res.status(404).json({ profile: "There are no profiles" }));
 });
 
 // @route   GET api/profile/handle/:handle
-// @desc    GET profile by handle
+// @desc    Get profile by handle
 // @access  Public
-router.get("/handle/:handle", (request, response) => {
-  Profile.findOne({ handle: request.params.handle })
-    .populate("user", ["user", "avatar"])
-    .then(profile => {
-      const errors = {};
 
+router.get("/handle/:handle", (req, res) => {
+  const errors = {};
+
+  Profile.findOne({ handle: req.params.handle })
+    .populate("user", ["name", "avatar"])
+    .then(profile => {
       if (!profile) {
-        errors.noprofile = "There is no profile for this user.";
-        response.status(400).json(errors);
+        errors.noprofile = "There is no profile for this user";
+        res.status(404).json(errors);
       }
-      response.json(profile);
+
+      res.json(profile);
     })
-    .catch(err => response.status(404).json(err));
+    .catch(err => res.status(404).json(err));
 });
 
 // @route   GET api/profile/user/:user_id
-// @desc    GET profile by user_id
+// @desc    Get profile by user ID
 // @access  Public
-router.get("/user/:user_id", (request, response) => {
+
+router.get("/user/:user_id", (req, res) => {
   const errors = {};
 
-  Profile.findOne(request.params.user_id)
-    .populate("user", ["user", "avatar"])
+  Profile.findOne({ user: req.params.user_id })
+    .populate("user", ["name", "avatar"])
     .then(profile => {
       if (!profile) {
-        errors.noprofile = "There is no profile for this user.";
-        response.status(400).json(errors);
+        errors.noprofile = "There is no profile for this user";
+        res.status(404).json(errors);
       }
-      response.json(profile);
+
+      res.json(profile);
     })
     .catch(err =>
-      response
-        .status(404)
-        .json({ profile: "There is no profile for this user." })
+      res.status(404).json({ profile: "There is no profile for this user" })
     );
 });
 
-// @route   Post api/profile
-// @desc   Create or Edit user profile
-// @access Private
+// @route   POST api/profile
+// @desc    Create or edit user profile
+// @access  Private
 router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
-  (request, response) => {
-    const { errors, isValid } = validateProfileInput(request.body);
-    // Check validation
+  (req, res) => {
+    const { errors, isValid } = validateProfileInput(req.body);
+
+    // Check Validation
     if (!isValid) {
       // Return any errors with 400 status
-      return response.status(400).json(errors);
+      return res.status(400).json(errors);
     }
+
     // Get fields
     const profileFields = {};
-    profileFields.user = request.user.id; // logged in user
-    // check to see if fields have come in, if so set it to variable
-    if (request.body.handle) profileFields.handle = request.body.handle;
-    if (request.body.company) profileFields.company = request.body.company;
-    if (request.body.website) profileFields.website = request.body.website;
-    if (request.body.location) profileFields.location = request.body.location;
-    if (request.body.bio) profileFields.bio = request.body.bio;
-    if (request.body.status) profileFields.status = request.body.status;
-    if (request.body.githubusername)
-      profileFields.githubusername = request.body.githubusername;
-    // Skills - Split into array
-    if (typeof request.body.skills !== "undefined") {
-      profileFields.skills = request.body.skills.split(",");
+    profileFields.user = req.user.id;
+    if (req.body.handle) profileFields.handle = req.body.handle;
+    if (req.body.company) profileFields.company = req.body.company;
+    if (req.body.website) profileFields.website = req.body.website;
+    if (req.body.location) profileFields.location = req.body.location;
+    if (req.body.bio) profileFields.bio = req.body.bio;
+    if (req.body.status) profileFields.status = req.body.status;
+    if (req.body.githubusername)
+      profileFields.githubusername = req.body.githubusername;
+    // Skills - Spilt into array
+    if (typeof req.body.skills !== "undefined") {
+      profileFields.skills = req.body.skills.split(",");
     }
+
     // Social
     profileFields.social = {};
-    if (request.body.youtube)
-      profileFields.social.youtube = request.body.youtube;
-    if (request.body.linkedin)
-      profileFields.social.linkedin = request.body.linkedin;
-    if (request.body.facebook)
-      profileFields.social.facebook = request.body.facebook;
-    if (request.body.instagram)
-      profileFields.social.instagram = request.body.instagram;
-    if (request.body.twitter)
-      profileFields.social.twitter = request.body.twitter;
+    if (req.body.youtube) profileFields.social.youtube = req.body.youtube;
+    if (req.body.twitter) profileFields.social.twitter = req.body.twitter;
+    if (req.body.facebook) profileFields.social.facebook = req.body.facebook;
+    if (req.body.linkedin) profileFields.social.linkedin = req.body.linkedin;
+    if (req.body.instagram) profileFields.social.instagram = req.body.instagram;
 
-    Profile.findOne({ user: request.user.id }).then(profile => {
+    Profile.findOne({ user: req.user.id }).then(profile => {
       if (profile) {
         // Update
         Profile.findOneAndUpdate(
-          { user: request.user.id },
+          { user: req.user.id },
           { $set: profileFields },
           { new: true }
-        ).then(profile => {
-          response.json(profile);
-        });
+        ).then(profile => res.json(profile));
       } else {
         // Create
 
@@ -160,136 +155,145 @@ router.post(
         Profile.findOne({ handle: profileFields.handle }).then(profile => {
           if (profile) {
             errors.handle = "That handle already exists";
-            response.status(400).json(errors);
+            res.status(400).json(errors);
           }
 
-          // Save profile
-          new Profile(profileFields).save().then(profile => {
-            response.json(profile);
-          });
+          // Save Profile
+          new Profile(profileFields).save().then(profile => res.json(profile));
         });
       }
     });
   }
 );
 
-// @route  DELETE api/profile
-// @descr  Delete user and profile
-// @access Private
-router.delete(
-  "/",
-  passport.authenticate("jwt", { session: false }),
-  (request, response) => {
-    Profile.findOneAndRemove({ user: request.user.id }).then(() => {
-      User.findOneAndRemove({ _id: request.user.id }).then(() => {
-        response.json({ success: true });
-      });
-    });
-  }
-);
-
-// @route  POST api/profile/experience
-// @descr  Add experience to profile
-// @access Private
+// @route   POST api/profile/experience
+// @desc    Add experience to profile
+// @access  Private
 router.post(
   "/experience",
   passport.authenticate("jwt", { session: false }),
-  (request, response) => {
-    const { errors, isValid } = validateExperienceInput(request.body);
+  (req, res) => {
+    const { errors, isValid } = validateExperienceInput(req.body);
 
-    //Check validation
+    // Check Validation
     if (!isValid) {
-      response.status(400).json(errors);
+      // Return any errors with 400 status
+      return res.status(400).json(errors);
     }
-    // Find loggedin user
-    Profile.findOne({ user: request.user.id }).then(profile => {
-      // Populate with form data
-      console.log("Hello");
+
+    Profile.findOne({ user: req.user.id }).then(profile => {
       const newExp = {
-        title: request.body.title,
-        company: request.body.company,
-        location: request.body.location,
-        from: request.body.from,
-        to: request.body.to,
-        current: request.body.current,
-        description: request.body.description
+        title: req.body.title,
+        company: req.body.company,
+        location: req.body.location,
+        from: req.body.from,
+        to: req.body.to,
+        current: req.body.current,
+        description: req.body.description
       };
-      // Add experience to the beginning of array
+
+      // Add to exp array
       profile.experience.unshift(newExp);
-      profile.save().then(profile => response.json(profile));
+
+      profile.save().then(profile => res.json(profile));
     });
   }
 );
 
-// @route  DELETE api/profile/experience/:exp_id
-// @descr  Delete experience from profile
-// @access Private
+// @route   POST api/profile/education
+// @desc    Add education to profile
+// @access  Private
+router.post(
+  "/education",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    const { errors, isValid } = validateEducationInput(req.body);
+
+    // Check Validation
+    if (!isValid) {
+      // Return any errors with 400 status
+      return res.status(400).json(errors);
+    }
+
+    Profile.findOne({ user: req.user.id }).then(profile => {
+      const newEdu = {
+        school: req.body.school,
+        degree: req.body.degree,
+        fieldofstudy: req.body.fieldofstudy,
+        from: req.body.from,
+        to: req.body.to,
+        current: req.body.current,
+        description: req.body.description
+      };
+
+      // Add to edu array
+      profile.education.unshift(newEdu);
+
+      profile.save().then(profile => res.json(profile));
+    });
+  }
+);
+
+// @route   DELETE api/profile/experience/:exp_id
+// @desc    Delete experience from profile
+// @access  Private
 router.delete(
   "/experience/:exp_id",
   passport.authenticate("jwt", { session: false }),
-  (request, response) => {
-    Profile.findOne({ user: request.user.id })
+  (req, res) => {
+    Profile.findOne({ user: req.user.id })
       .then(profile => {
         // Get remove index
         const removeIndex = profile.experience
           .map(item => item.id)
-          .indexOf(request.params.exp_id);
+          .indexOf(req.params.exp_id);
+
         // Splice out of array
         profile.experience.splice(removeIndex, 1);
-        // save
-        profile.save().then(profile => response.json(profile));
+
+        // Save
+        profile.save().then(profile => res.json(profile));
       })
-      .catch(err => response.status(404).json(err));
+      .catch(err => res.status(404).json(err));
   }
 );
 
-// @route  POST api/profile/education
-// @descr  Add education to profile
-// @access Private
-router.post(
-  "/education",
-  passport.authenticate("jwt", { session: false }),
-  (request, response) => {
-    const { errors, isValid } = validateEducationInput(request.body);
-
-    if (!isValid) {
-      return response.status(400).json(errors);
-    }
-
-    Profile.findOne({ user: request.user.id }).then(profile => {
-      const newEdu = {
-        school: request.body.school,
-        degree: request.body.degree,
-        fieldOfStudy: request.body.fieldOfStudy,
-        from: request.body.from,
-        to: request.body.to,
-        current: request.body.current,
-        description: request.body.description
-      };
-      profile.education.unshift(newEdu);
-      profile.save().then(profile => response.json(profile));
-    });
-  }
-);
-
-// @route  DELETE api/profile/education/:edu_id
-// @descr  Delete education from profile
-// @access Private
+// @route   DELETE api/profile/education/:edu_id
+// @desc    Delete education from profile
+// @access  Private
 router.delete(
   "/education/:edu_id",
   passport.authenticate("jwt", { session: false }),
-  (request, response) => {
-    // Get the edu index
-    Profile.findOne({ user: request.user.id })
+  (req, res) => {
+    Profile.findOne({ user: req.user.id })
       .then(profile => {
+        // Get remove index
         const removeIndex = profile.education
           .map(item => item.id)
-          .indexOf(request.params.edu_id);
-        // Slice it out
+          .indexOf(req.params.edu_id);
+
+        // Splice out of array
         profile.education.splice(removeIndex, 1);
-        profile.save().then(profile => response.json(profile));
+
+        // Save
+        profile.save().then(profile => res.json(profile));
       })
-      .catch(err => response.status(404).json(err));
+      .catch(err => res.status(404).json(err));
+  }
+);
+
+// @route   DELETE api/profile
+// @desc    Delete user and profile
+// @access  Private
+router.delete(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    Profile.findOneAndRemove({ user: req.user.id }).then(() => {
+      User.findOneAndRemove({ _id: req.user.id }).then(() =>
+        res.json({ success: true })
+      );
+    });
   }
 );
 

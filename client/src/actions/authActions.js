@@ -1,41 +1,42 @@
-import { GET_ERRORS, SET_CURRENT_USER } from "./types";
 import axios from "axios";
 import setAuthToken from "../utils/setAuthToken";
 import jwt_decode from "jwt-decode";
 
-// Register
+import { GET_ERRORS, SET_CURRENT_USER } from "./types";
+
+// Register User
 export const registerUser = (userData, history) => dispatch => {
   axios
-    .post("api/users/register", userData)
-    .then(result => history.push("/login"))
-    .catch(error =>
+    .post("/api/users/register", userData)
+    .then(res => history.push("/login"))
+    .catch(err =>
       dispatch({
         type: GET_ERRORS,
-        payload: error.response.data
+        payload: err.response.data
       })
     );
 };
 
-// GET User token
-
+// Login - Get User Token
 export const loginUser = userData => dispatch => {
   axios
-    .post("api/users/login", userData)
-    .then(response => {
-      const { token } = response.data;
-      // Set token to local storage
+    .post("/api/users/login", userData)
+    .then(res => {
+      // Save to localStorage
+      const { token } = res.data;
+      // Set token to ls
       localStorage.setItem("jwtToken", token);
-      // Set token to auth header
+      // Set token to Auth header
       setAuthToken(token);
-      // Decode token to get user date
+      // Decode token to get user data
       const decoded = jwt_decode(token);
-      //Set current user
+      // Set current user
       dispatch(setCurrentUser(decoded));
     })
-    .catch(error =>
+    .catch(err =>
       dispatch({
         type: GET_ERRORS,
-        payload: error.response.data
+        payload: err.response.data
       })
     );
 };
@@ -48,12 +49,12 @@ export const setCurrentUser = decoded => {
   };
 };
 
-// Logout user
-export const logoutUser = history => dispatch => {
+// Log user out
+export const logoutUser = () => dispatch => {
   // Remove token from localStorage
   localStorage.removeItem("jwtToken");
   // Remove auth header for future requests
   setAuthToken(false);
-  // Set current user to {} and isAuthenticated to false
+  // Set current user to {} which will set isAuthenticated to false
   dispatch(setCurrentUser({}));
 };
